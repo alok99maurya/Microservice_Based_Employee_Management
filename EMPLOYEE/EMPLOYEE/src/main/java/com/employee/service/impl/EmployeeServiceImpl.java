@@ -7,6 +7,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
+import com.employee.exception.BadRequestException;
+import com.employee.exception.ResourceNotFoundException;
 import com.employee.model.dto.EmployeeDto;
 import com.employee.model.entity.Employee;
 import com.employee.repository.EmployeeRepository;
@@ -39,12 +41,12 @@ public class EmployeeServiceImpl  implements EmployeeService {
 	public EmployeeDto updateEmployee(Long id, EmployeeDto employeeDto) {
 		
 		if(id == null || employeeDto.getId() == null) {
-			throw new RuntimeException("Please Provide Id for employee");
+			throw new BadRequestException("Please Provide Id for employee");
 		}
 		if(!Objects.equals(id, employeeDto.getId())) {
-			throw new RuntimeException("ID mismatch");
+			throw new BadRequestException("ID mismatch");
 		}
-		employeeRepository.findById(id).orElseThrow(()-> new RuntimeException("Employee not found"));
+		employeeRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Employee not Found with id " + id));
 		Employee entity = modelMapper.map(employeeDto, Employee.class);
 		Employee updatedEmployee = employeeRepository.save(entity);
 	
@@ -53,20 +55,23 @@ public class EmployeeServiceImpl  implements EmployeeService {
 
 	@Override
 	public void deleteEmployee(Long id) {
-		Employee employee = employeeRepository.findById(id).orElseThrow(()-> new RuntimeException("Employee not found"));
+		Employee employee = employeeRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Employee not Found with id " + id));
 		employeeRepository.delete(employee);
 		
 	}
 
 	@Override
 	public EmployeeDto getSingleEmployee(Long id) {
-		Employee employee = employeeRepository.findById(id).orElseThrow(()-> new RuntimeException("Employee not found"));
+		Employee employee = employeeRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Employee not Found with id " + id));
 		return modelMapper.map(employee, EmployeeDto.class);
 	}
 
 	@Override
 	public List<EmployeeDto> getAllEmployees() {
 		List<Employee> employees = employeeRepository.findAll();
+		if(employees.isEmpty()) {
+			throw new ResourceNotFoundException("Employee not Found ");
+		}
 		List<EmployeeDto> dtoList = employees.stream().map(emp->modelMapper.map(emp, EmployeeDto.class)).toList();
 		return dtoList;
 	
